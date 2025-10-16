@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform-origin: 50% 50%;
+        }
+        .modal {
+            backdrop-filter: blur(4px);
+        }
+        .chart-container {
+            position: relative;
+            height: 200px;
+        }
+        .progress-bar {
+            transition: width 0.8s ease-in-out;
+        }
+        .animate-bounce-in {
+            animation: bounceIn 0.6s ease-out;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .gradient-text {
+            background: linear-gradient(45deg, #ec4899, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.33); }
+            80%, 100% { opacity: 0; }
+        }
+        .chart-bar {
+            transition: all 0.3s ease;
+        }
+        .chart-bar:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-pink-50 to-purple-50 min-h-screen font-sans">
+    <!-- Welcome Screen -->
+    <div id="welcomeScreen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4">
+            <div class="text-center mb-8">
+                <div class="text-6xl mb-4">💍</div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Wedding Management System</h1>
+                <p class="text-gray-600">Welcome to your special day planner</p>
+            </div>
+            
+            <form onsubmit="enterSystem(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Bride's Name</label>
+                    <input type="text" id="brideName" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                           placeholder="Enter bride's name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Groom's Name</label>
+                    <input type="text" id="groomName" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                           placeholder="Enter groom's name">
+                </div>
+                <button type="submit" 
+                        class="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-medium py-3 px-4 rounded-lg transition duration-200">
+                    Start Planning Your Wedding 💕
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-500">Your information is kept private and secure</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main System (Hidden Initially) -->
+    <div id="mainSystem" class="container mx-auto px-4 py-8 max-w-6xl" style="display: none;">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold gradient-text mb-2 floating">💍 <span id="coupleNames"></span>'s Wedding</h1>
+            <p class="text-gray-600">Plan your perfect day with ease</p>
+            <div class="mt-2 space-x-4">
+                <button onclick="logout()" class="text-sm text-gray-500 hover:text-gray-700 underline">Switch Couple</button>
+                <button onclick="exportData()" class="text-sm text-blue-500 hover:text-blue-700 underline">Export Data</button>
+                <button onclick="clearAllData()" class="text-sm text-red-500 hover:text-red-700 underline">Reset All Data</button>
+            </div>
+        </div>
+
+        <!-- Progress Overview -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8 animate-slide-up">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-semibold text-gray-800">Planning Progress</h2>
+                <div class="flex items-center relative">
+                    <div class="absolute inset-0 rounded-full bg-pink-200 pulse-ring"></div>
+                    <svg class="progress-ring w-16 h-16 relative z-10" viewBox="0 0 120 120">
+                        <circle class="progress-ring-circle stroke-pink-200" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                        <circle class="progress-ring-circle stroke-pink-500" stroke-width="8" fill="transparent" r="52" cx="60" cy="60" stroke-dasharray="326.73" stroke-dashoffset="196.04" id="progressCircle"/>
+                    </svg>
+                    <span class="ml-3 text-2xl font-bold text-pink-500" id="progressText">40%</span>
+                </div>
+            </div>
+            
+            <!-- Interactive Progress Bars -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-700">Task Completion</span>
+                    <span class="text-sm text-gray-500" id="taskProgressText">5 of 12 completed</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="bg-gradient-to-r from-pink-500 to-purple-500 h-3 rounded-full progress-bar" style="width: 42%" id="taskProgressBar"></div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-700">Budget Usage</span>
+                    <span class="text-sm text-gray-500" id="budgetProgressText">50% spent</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="bg-gradient-to-r from-blue-500 to-cyan-500 h-3 rounded-full progress-bar" style="width: 50%" id="budgetProgressBar"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="text-center p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg transform hover:scale-105 transition-transform animate-bounce-in">
+                    <div class="text-2xl font-bold text-pink-600" id="totalTasks">12</div>
+                    <div class="text-sm text-gray-600">Total Tasks</div>
+                </div>
+                <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg transform hover:scale-105 transition-transform animate-bounce-in" style="animation-delay: 0.1s">
+                    <div class="text-2xl font-bold text-green-600" id="completedTasks">5</div>
+                    <div class="text-sm text-gray-600">Completed</div>
+                </div>
+                <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg transform hover:scale-105 transition-transform animate-bounce-in" style="animation-delay: 0.2s">
+                    <div class="text-2xl font-bold text-blue-600" id="totalBudget">$25,000</div>
+                    <div class="text-sm text-gray-600">Total Budget</div>
+                </div>
+                <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg transform hover:scale-105 transition-transform animate-bounce-in" style="animation-delay: 0.3s">
+                    <div class="text-2xl font-bold text-purple-600" id="timelineCount">6</div>
+                    <div class="text-sm text-gray-600">Timeline Events</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white rounded-lg shadow-lg mb-8">
+            <div class="flex flex-wrap border-b">
+                <button class="tab-btn px-6 py-4 font-medium text-pink-600 border-b-2 border-pink-600 bg-pink-50" data-tab="checklist">📋 Checklist</button>
+                <button class="tab-btn px-6 py-4 font-medium text-gray-600 hover:text-pink-600" data-tab="budget">💰 Budget</button>
+                <button class="tab-btn px-6 py-4 font-medium text-gray-600 hover:text-pink-600" data-tab="guests">👥 Guests</button>
+                <button class="tab-btn px-6 py-4 font-medium text-gray-600 hover:text-pink-600" data-tab="vendors">🏪 Vendors</button>
+                <button class="tab-btn px-6 py-4 font-medium text-gray-600 hover:text-pink-600" data-tab="timeline">📅 Timeline</button>
+            </div>
+
+            <!-- Checklist Tab -->
+            <div id="checklist" class="tab-content active p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Wedding Checklist</h3>
+                    <button onclick="openTaskModal()" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg font-medium">+ Add Task</button>
+                </div>
+                <div id="taskList" class="space-y-3">
+                    <!-- Tasks will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Budget Tab -->
+            <div id="budget" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Budget Tracker</h3>
+                    <button onclick="openBudgetModal()" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg font-medium">+ Add Item</button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <div id="budgetList" class="space-y-3">
+                            <!-- Budget items will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <!-- Budget Summary -->
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6">
+                            <h4 class="font-semibold text-gray-800 mb-4">Budget Summary</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span>Total Budget:</span>
+                                    <span class="font-semibold" id="budgetTotal">$25,000</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Total Spent:</span>
+                                    <span class="font-semibold text-red-600" id="budgetSpent">$12,500</span>
+                                </div>
+                                <div class="flex justify-between border-t pt-3">
+                                    <span class="font-semibold">Remaining:</span>
+                                    <span class="font-semibold text-green-600" id="budgetRemaining">$12,500</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Interactive Budget Chart -->
+                        <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-6">
+                            <h4 class="font-semibold text-gray-800 mb-4">Budget Breakdown</h4>
+                            <div class="chart-container">
+                                <div id="budgetChart" class="flex items-end justify-between h-full space-x-2">
+                                    <!-- Chart bars will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            <div class="mt-4 text-xs text-gray-600 text-center">
+                                Hover over bars to see details
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guests Tab -->
+            <div id="guests" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Guest List</h3>
+                    <button onclick="openGuestModal()" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg font-medium">+ Add Guest</button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <div id="guestList" class="space-y-3">
+                            <!-- Guests will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <!-- RSVP Summary -->
+                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6">
+                            <h4 class="font-semibold text-gray-800 mb-4">RSVP Summary</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span>Total Invited:</span>
+                                    <span class="font-semibold" id="totalInvited">120</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Confirmed:</span>
+                                    <span class="font-semibold text-green-600" id="confirmedGuests">85</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Declined:</span>
+                                    <span class="font-semibold text-red-600" id="declinedGuests">15</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Pending:</span>
+                                    <span class="font-semibold text-yellow-600" id="pendingGuests">20</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Interactive RSVP Chart -->
+                        <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-6">
+                            <h4 class="font-semibold text-gray-800 mb-4">RSVP Status</h4>
+                            <div class="relative">
+                                <!-- Donut Chart -->
+                                <div class="flex justify-center mb-4">
+                                    <svg width="120" height="120" class="transform -rotate-90">
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="#e5e7eb" stroke-width="10"/>
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="#10b981" stroke-width="10" 
+                                                stroke-dasharray="314" stroke-dashoffset="94" id="confirmedArc" class="transition-all duration-1000"/>
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="#ef4444" stroke-width="10" 
+                                                stroke-dasharray="314" stroke-dashoffset="267" id="declinedArc" class="transition-all duration-1000"/>
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="#f59e0b" stroke-width="10" 
+                                                stroke-dasharray="314" stroke-dashoffset="251" id="pendingArc" class="transition-all duration-1000"/>
+                                    </svg>
+                                </div>
+                                
+                                <!-- Legend -->
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                            <span>Confirmed</span>
+                                        </div>
+                                        <span class="font-medium" id="confirmedPercent">70%</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                                            <span>Declined</span>
+                                        </div>
+                                        <span class="font-medium" id="declinedPercent">13%</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                                            <span>Pending</span>
+                                        </div>
+                                        <span class="font-medium" id="pendingPercent">17%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vendors Tab -->
+            <div id="vendors" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Vendor Management</h3>
+                    <button onclick="openVendorModal()" class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg font-medium">+ Add Vendor</button>
+                </div>
+                <div id="vendorList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Vendors will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Timeline Tab -->
+            <div id="timeline" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Wedding Day Timeline</h3>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-600">Timeline Progress</div>
+                        <div class="text-lg font-semibold text-purple-600" id="timelineProgress">6 events planned</div>
+                        <div class="text-xs text-gray-500" id="timelineSpan">11 hours covered</div>
+                    </div>
+                </div>
+                
+                <!-- Visual Timeline -->
+                <div class="mb-8 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6">
+                    <h4 class="font-semibold text-gray-800 mb-4">Visual Timeline</h4>
+                    <div class="relative">
+                        <div class="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-400 to-pink-400"></div>
+                        <div id="visualTimeline" class="space-y-6">
+                            <!-- Visual timeline will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="timelineList" class="space-y-4">
+                    <!-- Timeline events will be populated by JavaScript -->
+                </div>
+                <button onclick="openTimelineModal()" class="mt-6 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg font-medium transform hover:scale-105 transition-all">+ Add Event</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden modal z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 class="text-xl font-semibold mb-4">Add New Task</h2>
+            <div class="space-y-4">
+                <input id="taskInput" type="text" placeholder="Task description" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <select id="priorityInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                    <option value="high">High Priority</option>
+                    <option value="medium" selected>Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                </select>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeTaskModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">Cancel</button>
+                <button onclick="saveTask()" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg">Add Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Modal -->
+    <div id="budgetModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden modal z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 class="text-xl font-semibold mb-4">Add Budget Item</h2>
+            <div class="space-y-4">
+                <input id="budgetCategoryInput" type="text" placeholder="Category (e.g., Flowers)" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <input id="budgetAmountInput" type="number" placeholder="Budgeted amount" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <input id="budgetSpentInput" type="number" placeholder="Amount spent (optional)" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeBudgetModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">Cancel</button>
+                <button onclick="saveBudgetItem()" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg">Add Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guest Modal -->
+    <div id="guestModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden modal z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 class="text-xl font-semibold mb-4">Add Guest</h2>
+            <div class="space-y-4">
+                <input id="guestNameInput" type="text" placeholder="Guest name" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <input id="guestEmailInput" type="email" placeholder="Email address" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <div class="flex items-center">
+                    <input id="guestPlusOneInput" type="checkbox" class="mr-2 w-4 h-4 text-pink-600 rounded">
+                    <label for="guestPlusOneInput" class="text-gray-700">Plus one allowed</label>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeGuestModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">Cancel</button>
+                <button onclick="saveGuest()" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg">Add Guest</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Modal -->
+    <div id="vendorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden modal z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 class="text-xl font-semibold mb-4">Add Vendor</h2>
+            <div class="space-y-4">
+                <input id="vendorNameInput" type="text" placeholder="Vendor name" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <input id="vendorCategoryInput" type="text" placeholder="Category (e.g., Photography)" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <input id="vendorContactInput" type="text" placeholder="Contact info" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <select id="vendorStatusInput" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                    <option value="pending">Pending</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="booked">Booked</option>
+                </select>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeVendorModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">Cancel</button>
+                <button onclick="saveVendor()" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg">Add Vendor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Modal -->
+    <div id="timelineModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden modal z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 class="text-xl font-semibold mb-4">Add Timeline Event</h2>
+            <div class="space-y-4">
+                <input id="timelineTimeInput" type="time" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+                <input id="timelineEventInput" type="text" placeholder="Event description" 
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closeTimelineModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">Cancel</button>
+                <button onclick="saveTimelineEvent()" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg">Add Event</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let tasks = [
+            { id: 1, text: "Book wedding venue", completed: true, priority: "high" },
+            { id: 2, text: "Choose wedding dress", completed: true, priority: "high" },
+            { id: 3, text: "Send invitations", completed: true, priority: "high" },
+            { id: 4, text: "Book photographer", completed: true, priority: "high" },
+            { id: 5, text: "Order wedding cake", completed: true, priority: "medium" },
+            { id: 6, text: "Choose flowers", completed: false, priority: "medium" },
+            { id: 7, text: "Book band/DJ", completed: false, priority: "high" },
+            { id: 8, text: "Plan honeymoon", completed: false, priority: "low" },
+            { id: 9, text: "Choose wedding rings", completed: false, priority: "high" },
+            { id: 10, text: "Book transportation", completed: false, priority: "medium" },
+            { id: 11, text: "Plan rehearsal dinner", completed: false, priority: "medium" },
+            { id: 12, text: "Get marriage license", completed: false, priority: "high" }
+        ];
+
+        let budgetItems = [
+            { id: 1, category: "Venue", budgeted: 8000, spent: 8000 },
+            { id: 2, category: "Catering", budgeted: 6000, spent: 0 },
+            { id: 3, category: "Photography", budgeted: 3000, spent: 1500 },
+            { id: 4, category: "Flowers", budgeted: 1500, spent: 0 },
+            { id: 5, category: "Music", budgeted: 2000, spent: 0 },
+            { id: 6, category: "Dress & Attire", budgeted: 2500, spent: 2000 },
+            { id: 7, category: "Transportation", budgeted: 1000, spent: 0 },
+            { id: 8, category: "Miscellaneous", budgeted: 1000, spent: 1000 }
+        ];
+
+        let guests = [
+            { id: 1, name: "John & Sarah Smith", email: "john@email.com", status: "confirmed", plusOne: true },
+            { id: 2, name: "Mike Johnson", email: "mike@email.com", status: "confirmed", plusOne: false },
+            { id: 3, name: "Emily Davis", email: "emily@email.com", status: "pending", plusOne: true },
+            { id: 4, name: "Robert Wilson", email: "robert@email.com", status: "declined", plusOne: false }
+        ];
+
+        let vendors = [
+            { id: 1, name: "Elegant Venues", category: "Venue", contact: "555-0101", status: "booked" },
+            { id: 2, name: "Perfect Photos", category: "Photography", contact: "555-0102", status: "booked" },
+            { id: 3, name: "Delicious Catering", category: "Catering", contact: "555-0103", status: "contacted" },
+            { id: 4, name: "Beautiful Blooms", category: "Flowers", contact: "555-0104", status: "pending" }
+        ];
+
+        let timelineEvents = [
+            { id: 1, time: "10:00", event: "Hair and makeup begins" },
+            { id: 2, time: "14:00", event: "Photography session" },
+            { id: 3, time: "16:00", event: "Ceremony begins" },
+            { id: 4, time: "17:00", event: "Cocktail hour" },
+            { id: 5, time: "18:30", event: "Reception dinner" },
+            { id: 6, time: "21:00", event: "Dancing begins" }
+        ];
+
+        // Data persistence functions
+        function saveData() {
+            localStorage.setItem("weddingTasks", JSON.stringify(tasks));
+            localStorage.setItem("weddingBudgetItems", JSON.stringify(budgetItems));
+            localStorage.setItem("weddingGuests", JSON.stringify(guests));
+            localStorage.setItem("weddingVendors", JSON.stringify(vendors));
+            localStorage.setItem("weddingTimelineEvents", JSON.stringify(timelineEvents));
+        }
+
+        function loadData() {
+            const savedTasks = localStorage.getItem("weddingTasks");
+            const savedBudget = localStorage.getItem("weddingBudgetItems");
+            const savedGuests = localStorage.getItem("weddingGuests");
+            const savedVendors = localStorage.getItem("weddingVendors");
+            const savedTimeline = localStorage.getItem("weddingTimelineEvents");
+            
+            if (savedTasks) tasks = JSON.parse(savedTasks);
+            if (savedBudget) budgetItems = JSON.parse(savedBudget);
+            if (savedGuests) guests = JSON.parse(savedGuests);
+            if (savedVendors) vendors = JSON.parse(savedVendors);
+            if (savedTimeline) timelineEvents = JSON.parse(savedTimeline);
+        }
+
+        function exportData() {
+            const allData = {
+                tasks,
+                budgetItems,
+                guests,
+                vendors,
+                timelineEvents,
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(allData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'wedding-planning-data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to reset all wedding planning data? This cannot be undone.')) {
+                localStorage.removeItem("weddingTasks");
+                localStorage.removeItem("weddingBudgetItems");
+                localStorage.removeItem("weddingGuests");
+                localStorage.removeItem("weddingVendors");
+                localStorage.removeItem("weddingTimelineEvents");
+                location.reload();
+            }
+        }
+
+        // Welcome screen functionality
+        function enterSystem(event) {
+            event.preventDefault();
+            const brideName = document.getElementById('brideName').value.trim();
+            const groomName = document.getElementById('groomName').value.trim();
+            
+            if (brideName && groomName) {
+                document.getElementById('coupleNames').textContent = `${brideName} & ${groomName}`;
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('mainSystem').style.display = 'block';
+                
+                // Load saved data first
+                loadData();
+                
+                // Initialize all sections
+                renderTasks();
+                renderBudget();
+                renderGuests();
+                renderVendors();
+                renderTimeline();
+            }
+        }
+
+        function logout() {
+            document.getElementById('welcomeScreen').style.display = 'flex';
+            document.getElementById('mainSystem').style.display = 'none';
+            document.getElementById('brideName').value = '';
+            document.getElementById('groomName').value = '';
+        }
+
+        // Tab functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                
+                // Update button styles
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.className = 'tab-btn px-6 py-4 font-medium text-gray-600 hover:text-pink-600';
+                });
+                btn.className = 'tab-btn px-6 py-4 font-medium text-pink-600 border-b-2 border-pink-600 bg-pink-50';
+                
+                // Show/hide content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Task Modal Functions
+        function openTaskModal() {
+            document.getElementById('taskModal').classList.remove('hidden');
+            document.getElementById('taskInput').focus();
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.add('hidden');
+            document.getElementById('taskInput').value = '';
+            document.getElementById('priorityInput').value = 'medium';
+        }
+
+        function saveTask() {
+            const text = document.getElementById('taskInput').value.trim();
+            const priority = document.getElementById('priorityInput').value;
+            
+            if (text) {
+                tasks.push({
+                    id: Date.now(),
+                    text: text,
+                    completed: false,
+                    priority: priority
+                });
+                renderTasks();
+                saveData();
+                closeTaskModal();
+            }
+        }
+
+        // Budget Modal Functions
+        function openBudgetModal() {
+            document.getElementById('budgetModal').classList.remove('hidden');
+            document.getElementById('budgetCategoryInput').focus();
+        }
+
+        function closeBudgetModal() {
+            document.getElementById('budgetModal').classList.add('hidden');
+            document.getElementById('budgetCategoryInput').value = '';
+            document.getElementById('budgetAmountInput').value = '';
+            document.getElementById('budgetSpentInput').value = '';
+        }
+
+        function saveBudgetItem() {
+            const category = document.getElementById('budgetCategoryInput').value.trim();
+            const budgeted = parseFloat(document.getElementById('budgetAmountInput').value) || 0;
+            const spent = parseFloat(document.getElementById('budgetSpentInput').value) || 0;
+            
+            if (category && budgeted > 0) {
+                budgetItems.push({
+                    id: Date.now(),
+                    category: category,
+                    budgeted: budgeted,
+                    spent: spent
+                });
+                renderBudget();
+                saveData();
+                closeBudgetModal();
+            }
+        }
+
+        // Guest Modal Functions
+        function openGuestModal() {
+            document.getElementById('guestModal').classList.remove('hidden');
+            document.getElementById('guestNameInput').focus();
+        }
+
+        function closeGuestModal() {
+            document.getElementById('guestModal').classList.add('hidden');
+            document.getElementById('guestNameInput').value = '';
+            document.getElementById('guestEmailInput').value = '';
+            document.getElementById('guestPlusOneInput').checked = false;
+        }
+
+        function saveGuest() {
+            const name = document.getElementById('guestNameInput').value.trim();
+            const email = document.getElementById('guestEmailInput').value.trim();
+            const plusOne = document.getElementById('guestPlusOneInput').checked;
+            
+            if (name && email) {
+                guests.push({
+                    id: Date.now(),
+                    name: name,
+                    email: email,
+                    status: 'pending',
+                    plusOne: plusOne
+                });
+                renderGuests();
+                saveData();
+                closeGuestModal();
+            }
+        }
+
+        // Vendor Modal Functions
+        function openVendorModal() {
+            document.getElementById('vendorModal').classList.remove('hidden');
+            document.getElementById('vendorNameInput').focus();
+        }
+
+        function closeVendorModal() {
+            document.getElementById('vendorModal').classList.add('hidden');
+            document.getElementById('vendorNameInput').value = '';
+            document.getElementById('vendorCategoryInput').value = '';
+            document.getElementById('vendorContactInput').value = '';
+            document.getElementById('vendorStatusInput').value = 'pending';
+        }
+
+        function saveVendor() {
+            const name = document.getElementById('vendorNameInput').value.trim();
+            const category = document.getElementById('vendorCategoryInput').value.trim();
+            const contact = document.getElementById('vendorContactInput').value.trim();
+            const status = document.getElementById('vendorStatusInput').value;
+            
+            if (name && category && contact) {
+                vendors.push({
+                    id: Date.now(),
+                    name: name,
+                    category: category,
+                    contact: contact,
+                    status: status
+                });
+                renderVendors();
+                saveData();
+                closeVendorModal();
+            }
+        }
+
+        // Timeline Modal Functions
+        function openTimelineModal() {
+            document.getElementById('timelineModal').classList.remove('hidden');
+            document.getElementById('timelineTimeInput').focus();
+        }
+
+        function closeTimelineModal() {
+            document.getElementById('timelineModal').classList.add('hidden');
+            document.getElementById('timelineTimeInput').value = '';
+            document.getElementById('timelineEventInput').value = '';
+        }
+
+        function saveTimelineEvent() {
+            const time = document.getElementById('timelineTimeInput').value;
+            const event = document.getElementById('timelineEventInput').value.trim();
+            
+            if (time && event) {
+                timelineEvents.push({
+                    id: Date.now(),
+                    time: time,
+                    event: event
+                });
+                renderTimeline();
+                saveData();
+                closeTimelineModal();
+            }
+        }
+
+        // Task management
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = tasks.map(task => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                               onchange="toggleTask(${task.id})" 
+                               class="mr-3 w-5 h-5 text-pink-600 rounded">
+                        <span class="${task.completed ? 'line-through text-gray-500' : 'text-gray-800'} font-medium">
+                            ${task.text}
+                        </span>
+                        <span class="ml-3 px-2 py-1 text-xs rounded-full ${
+                            task.priority === 'high' ? 'bg-red-100 text-red-800' :
+                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                        }">
+                            ${task.priority}
+                        </span>
+                    </div>
+                    <button onclick="deleteTask(${task.id})" class="text-red-500 hover:text-red-700">
+                        🗑️
+                    </button>
+                </div>
+            `).join('');
+            updateProgress();
+        }
+
+        function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            task.completed = !task.completed;
+            renderTasks();
+            saveData();
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            renderTasks();
+            saveData();
+        }
+
+        // Budget management
+        function renderBudget() {
+            const budgetList = document.getElementById('budgetList');
+            budgetList.innerHTML = budgetItems.map(item => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">${item.category}</div>
+                        <div class="text-sm text-gray-600">Budgeted: $${item.budgeted.toLocaleString()}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium ${item.spent > item.budgeted ? 'text-red-600' : 'text-gray-800'}">
+                            $${item.spent.toLocaleString()}
+                        </div>
+                        <div class="text-sm text-gray-600">spent</div>
+                        <button onclick="deleteBudgetItem(${item.id})" class="text-red-500 hover:text-red-700 text-xs mt-1">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            updateBudgetSummary();
+        }
+
+        function deleteBudgetItem(id) {
+            budgetItems = budgetItems.filter(item => item.id !== id);
+            renderBudget();
+            saveData();
+        }
+
+        function updateBudgetSummary() {
+            const total = budgetItems.reduce((sum, item) => sum + item.budgeted, 0);
+            const spent = budgetItems.reduce((sum, item) => sum + item.spent, 0);
+            const remaining = total - spent;
+            const spentPercentage = total > 0 ? Math.round((spent / total) * 100) : 0;
+
+            document.getElementById('budgetTotal').textContent = `$${total.toLocaleString()}`;
+            document.getElementById('budgetSpent').textContent = `$${spent.toLocaleString()}`;
+            document.getElementById('budgetRemaining').textContent = `$${remaining.toLocaleString()}`;
+            document.getElementById('totalBudget').textContent = `$${total.toLocaleString()}`;
+            
+            // Update budget progress bar
+            const budgetProgressBar = document.getElementById('budgetProgressBar');
+            const budgetProgressText = document.getElementById('budgetProgressText');
+            budgetProgressBar.style.width = `${spentPercentage}%`;
+            budgetProgressText.textContent = `${spentPercentage}% spent`;
+            
+            renderBudgetChart();
+        }
+        
+        function renderBudgetChart() {
+            const budgetChart = document.getElementById('budgetChart');
+            if (!budgetChart) return;
+            
+            const maxBudget = Math.max(...budgetItems.map(item => item.budgeted));
+            const colors = ['#ec4899', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#6366f1', '#84cc16'];
+            
+            budgetChart.innerHTML = budgetItems.map((item, index) => {
+                const heightPercentage = maxBudget > 0 ? (item.budgeted / maxBudget) * 100 : 0;
+                const spentPercentage = item.budgeted > 0 ? (item.spent / item.budgeted) * 100 : 0;
+                const color = colors[index % colors.length];
+                
+                return `
+                    <div class="flex flex-col items-center flex-1 group">
+                        <div class="relative w-full max-w-8 bg-gray-200 rounded-t chart-bar" 
+                             style="height: ${heightPercentage}%"
+                             title="${item.category}: $${item.spent.toLocaleString()} / $${item.budgeted.toLocaleString()}">
+                            <div class="absolute bottom-0 left-0 right-0 rounded-t transition-all duration-500" 
+                                 style="height: ${spentPercentage}%; background-color: ${color}"></div>
+                        </div>
+                        <div class="text-xs text-gray-600 mt-2 text-center transform rotate-45 origin-bottom-left w-16">
+                            ${item.category.length > 8 ? item.category.substring(0, 8) + '...' : item.category}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Guest management
+        function renderGuests() {
+            const guestList = document.getElementById('guestList');
+            guestList.innerHTML = guests.map(guest => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-800">${guest.name}</div>
+                        <div class="text-sm text-gray-600">${guest.email}</div>
+                        ${guest.plusOne ? '<div class="text-xs text-blue-600">+1 Guest</div>' : ''}
+                    </div>
+                    <div class="text-right">
+                        <select onchange="updateGuestStatus(${guest.id}, this.value)" 
+                                class="mb-2 text-xs border rounded px-2 py-1 ${
+                                    guest.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                    guest.status === 'declined' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                }">
+                            <option value="pending" ${guest.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="confirmed" ${guest.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                            <option value="declined" ${guest.status === 'declined' ? 'selected' : ''}>Declined</option>
+                        </select>
+                        <button onclick="deleteGuest(${guest.id})" class="block text-red-500 hover:text-red-700 text-xs">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            updateGuestSummary();
+        }
+
+        function updateGuestStatus(id, status) {
+            const guest = guests.find(g => g.id === id);
+            guest.status = status;
+            renderGuests();
+            saveData();
+        }
+
+        function deleteGuest(id) {
+            guests = guests.filter(g => g.id !== id);
+            renderGuests();
+            saveData();
+        }
+
+        function updateGuestSummary() {
+            const total = guests.length;
+            const confirmed = guests.filter(g => g.status === 'confirmed').length;
+            const declined = guests.filter(g => g.status === 'declined').length;
+            const pending = guests.filter(g => g.status === 'pending').length;
+
+            document.getElementById('totalInvited').textContent = total;
+            document.getElementById('confirmedGuests').textContent = confirmed;
+            document.getElementById('declinedGuests').textContent = declined;
+            document.getElementById('pendingGuests').textContent = pending;
+            document.getElementById('guestCount').textContent = total;
+            
+            updateGuestChart(confirmed, declined, pending, total);
+        }
+        
+        function updateGuestChart(confirmed, declined, pending, total) {
+            if (total === 0) return;
+            
+            const confirmedPercent = Math.round((confirmed / total) * 100);
+            const declinedPercent = Math.round((declined / total) * 100);
+            const pendingPercent = Math.round((pending / total) * 100);
+            
+            document.getElementById('confirmedPercent').textContent = `${confirmedPercent}%`;
+            document.getElementById('declinedPercent').textContent = `${declinedPercent}%`;
+            document.getElementById('pendingPercent').textContent = `${pendingPercent}%`;
+            
+            // Update donut chart arcs
+            const circumference = 314; // 2 * π * 50
+            
+            // Confirmed arc (starts at top)
+            const confirmedLength = (confirmedPercent / 100) * circumference;
+            const confirmedOffset = circumference - confirmedLength;
+            document.getElementById('confirmedArc').style.strokeDasharray = circumference;
+            document.getElementById('confirmedArc').style.strokeDashoffset = confirmedOffset;
+            
+            // Declined arc (starts after confirmed)
+            const declinedLength = (declinedPercent / 100) * circumference;
+            const declinedStart = confirmedLength;
+            const declinedOffset = circumference - declinedLength - declinedStart;
+            document.getElementById('declinedArc').style.strokeDasharray = `${declinedLength} ${circumference}`;
+            document.getElementById('declinedArc').style.strokeDashoffset = declinedOffset;
+            
+            // Pending arc (starts after declined)
+            const pendingLength = (pendingPercent / 100) * circumference;
+            const pendingStart = confirmedLength + declinedLength;
+            const pendingOffset = circumference - pendingLength - pendingStart;
+            document.getElementById('pendingArc').style.strokeDasharray = `${pendingLength} ${circumference}`;
+            document.getElementById('pendingArc').style.strokeDashoffset = pendingOffset;
+        }
+
+        // Vendor management
+        function renderVendors() {
+            const vendorList = document.getElementById('vendorList');
+            vendorList.innerHTML = vendors.map(vendor => `
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="font-medium text-gray-800 mb-2">${vendor.name}</div>
+                    <div class="text-sm text-gray-600 mb-1">${vendor.category}</div>
+                    <div class="text-sm text-gray-600 mb-2">${vendor.contact}</div>
+                    <div class="flex justify-between items-center">
+                        <select onchange="updateVendorStatus(${vendor.id}, this.value)" 
+                                class="text-xs border rounded px-2 py-1 ${
+                                    vendor.status === 'booked' ? 'bg-green-100 text-green-800' :
+                                    vendor.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                }">
+                            <option value="pending" ${vendor.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="contacted" ${vendor.status === 'contacted' ? 'selected' : ''}>Contacted</option>
+                            <option value="booked" ${vendor.status === 'booked' ? 'selected' : ''}>Booked</option>
+                        </select>
+                        <button onclick="deleteVendor(${vendor.id})" class="text-red-500 hover:text-red-700 text-xs">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateVendorStatus(id, status) {
+            const vendor = vendors.find(v => v.id === id);
+            vendor.status = status;
+            renderVendors();
+            saveData();
+        }
+
+        function deleteVendor(id) {
+            vendors = vendors.filter(v => v.id !== id);
+            renderVendors();
+            saveData();
+        }
+
+        // Timeline management
+        function renderTimeline() {
+            // Sort events by time
+            timelineEvents.sort((a, b) => a.time.localeCompare(b.time));
+            
+            const timelineList = document.getElementById('timelineList');
+            timelineList.innerHTML = timelineEvents.map(event => {
+                // Convert 24-hour to 12-hour format for display
+                const [hours, minutes] = event.time.split(':');
+                const hour12 = ((parseInt(hours) + 11) % 12 + 1);
+                const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
+                const displayTime = `${hour12}:${minutes} ${ampm}`;
+                
+                return `
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg animate-slide-up">
+                        <div class="w-24 text-sm font-medium text-pink-600">${displayTime}</div>
+                        <div class="flex-1 text-gray-800">${event.event}</div>
+                        <button onclick="deleteTimelineEvent(${event.id})" class="text-red-500 hover:text-red-700 transform hover:scale-110 transition-transform">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            renderVisualTimeline();
+            updateTimelineProgress();
+        }
+        
+        function renderVisualTimeline() {
+            const visualTimeline = document.getElementById('visualTimeline');
+            if (!visualTimeline) return;
+            
+            const sortedEvents = [...timelineEvents].sort((a, b) => a.time.localeCompare(b.time));
+            const colors = ['#ec4899', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+            
+            visualTimeline.innerHTML = sortedEvents.map((event, index) => {
+                const [hours, minutes] = event.time.split(':');
+                const hour12 = ((parseInt(hours) + 11) % 12 + 1);
+                const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
+                const displayTime = `${hour12}:${minutes} ${ampm}`;
+                const color = colors[index % colors.length];
+                
+                return `
+                    <div class="flex items-center animate-slide-up" style="animation-delay: ${index * 0.1}s">
+                        <div class="relative z-10 w-4 h-4 rounded-full border-4 border-white shadow-lg" 
+                             style="background-color: ${color}"></div>
+                        <div class="ml-6 bg-white rounded-lg shadow-md p-4 flex-1 transform hover:scale-105 transition-transform">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="font-semibold text-gray-800">${event.event}</div>
+                                    <div class="text-sm font-medium" style="color: ${color}">${displayTime}</div>
+                                </div>
+                                <div class="w-3 h-3 rounded-full" style="background-color: ${color}"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deleteTimelineEvent(id) {
+            timelineEvents = timelineEvents.filter(e => e.id !== id);
+            renderTimeline();
+            saveData();
+        }
+
+        // Update timeline progress
+        function updateTimelineProgress() {
+            const eventCount = timelineEvents.length;
+            const timeSpan = calculateTimeSpan();
+            
+            document.getElementById('timelineProgress').textContent = `${eventCount} events planned`;
+            document.getElementById('timelineCount').textContent = eventCount;
+            document.getElementById('timelineSpan').textContent = timeSpan > 0 ? `${timeSpan} hours covered` : 'No events yet';
+        }
+
+        function calculateTimeSpan() {
+            if (timelineEvents.length === 0) return 0;
+            
+            const times = timelineEvents.map(event => {
+                const [hours, minutes] = event.time.split(':');
+                return parseInt(hours) * 60 + parseInt(minutes);
+            }).sort((a, b) => a - b);
+            
+            const spanMinutes = times[times.length - 1] - times[0];
+            return Math.round(spanMinutes / 60 * 10) / 10; // Round to 1 decimal
+        }
+
+        // Progress calculation
+        function updateProgress() {
+            const completed = tasks.filter(t => t.completed).length;
+            const total = tasks.length;
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            document.getElementById('progressText').textContent = `${percentage}%`;
+            document.getElementById('totalTasks').textContent = total;
+            document.getElementById('completedTasks').textContent = completed;
+            
+            // Update progress circle
+            const circle = document.getElementById('progressCircle');
+            const circumference = 2 * Math.PI * 52;
+            const offset = circumference - (percentage / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+            
+            // Update task progress bar
+            const taskProgressBar = document.getElementById('taskProgressBar');
+            const taskProgressText = document.getElementById('taskProgressText');
+            taskProgressBar.style.width = `${percentage}%`;
+            taskProgressText.textContent = `${completed} of ${total} completed`;
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const modals = ['taskModal', 'budgetModal', 'guestModal', 'vendorModal', 'timelineModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modals = ['taskModal', 'budgetModal', 'guestModal', 'vendorModal', 'timelineModal'];
+                modals.forEach(modalId => {
+                    document.getElementById(modalId).classList.add('hidden');
+                });
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98f8e0b745adb2d6',t:'MTc2MDYzMTU2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
